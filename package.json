@@ -1,0 +1,34 @@
+{
+  "name": "ase-285-individual-project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start" :"react-scripts start",
+    "build": "react-scripts build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Chatroom64/ASE-285-Individual-Project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Chatroom64/ASE-285-Individual-Project/issues"
+  },
+  "homepage": "https://github.com/Chatroom64/ASE-285-Individual-Project#readme",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "mongodb": "^7.2.0",
+    "mongoose": "^9.6.1",
+    "react": "^19.2.5",
+    "ws": "^8.20.0"
+  }
+}
