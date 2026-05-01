@@ -1,25 +1,37 @@
-import { useEffect, useState } from "react";
-import { connectSocket, sendMessage } from "../../services/socket.js";
+import { useEffect, useState, useRef } from "react";
+import { connectSocket, sendMessage } from "../services/socket";
 
 export default function Chat() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [streaming, setStreaming] = useState("");
+  const [conversationId, setConversationId] = useState(null);
+
+  const streamingRef = useRef("");
 
   useEffect(() => {
     connectSocket(handleIncoming);
   }, []);
 
   function handleIncoming(data) {
-    if (data.token) {
-      setStreaming(prev => prev + data.token);
+    if (data.type === "conversation_created") {
+      setConversationId(data.conversationId);
     }
 
-    if (data.done) {
+    if (data.type === "token") {
+      streamingRef.current += data.token;
+      setStreaming(streamingRef.current);
+    }
+
+    if (data.type === "done") {
+      const finalMessage = streamingRef.current;
+        
       setMessages(prev => [
         ...prev,
-        { role: "assistant", content: streaming }
+        { role: "assistant", content: finalMessage }
       ]);
+    
+      streamingRef.current = "";
       setStreaming("");
     }
   }
@@ -27,7 +39,6 @@ export default function Chat() {
   function handleSend() {
     if (!input.trim()) return;
 
-    // add user message immediately
     setMessages(prev => [
       ...prev,
       { role: "user", content: input }
@@ -35,10 +46,11 @@ export default function Chat() {
 
     sendMessage({
       prompt: input,
-      conversationId: "test123" // temp for now
+      ...(conversationId && {conversationId})
     });
 
     setInput("");
+    streamingRef.current = "";
     setStreaming("");
   }
 
@@ -46,7 +58,7 @@ export default function Chat() {
     <div>
       <h2>Chat</h2>
 
-      <div style={{ border: "1px solid #ccc", padding: 10, height: 300, overflowY: "auto" }}>
+      <div style={{ border: "1px solid #ccc", height: 300, overflowY: "auto", padding: 10 }}>
         {messages.map((msg, i) => (
           <div key={i}>
             <strong>{msg.role}:</strong> {msg.content}

@@ -1,47 +1,80 @@
-import Message from "../models/Message.js";
+import Conversation from "../models/conversations.js";
+import Message from "../models/messages.js";
 
 export async function handleChat(ws, conversationId, prompt) {
-  // 1. Save user message
+  let convoId = conversationId;
+
+  // if no convo exists, create a new one
+  if (!convoId) {
+    const convo = await Conversation.create({});
+    convoId = convo._id;
+
+    ws.send(JSON.stringify({
+      type: "conversation_created",
+      conversationId: convoId
+    }));
+  }
+
+  // Save message
   await Message.create({
-    conversationId,
+    conversationId: convoId,
     role: "user",
     content: prompt
   });
 
-  // 2. Get history
-  const history = await Message.find({ conversationId })
+  // Load history
+  await Message.find({ conversationId: convoId })
     .sort({ createdAt: 1 })
     .limit(20);
 
-  const messages = history.map(m => ({
-    role: m.role,
-    content: m.content
-  }));
+  // I orginally made the API call, but since then, the API tokens expired, so I've created a mock AI.
+  function fakeAI(prompt) {
+    const text = prompt.toLowerCase();
 
-  // 3. Call OpenAI (streaming)
-  let fullResponse = "";
-
-  const stream = await openai.chat.completions.create({
-    model: "gpt-4.1",
-    messages,
-    stream: true
-  });
-
-  for await (const chunk of stream) {
-    const token = chunk.choices[0]?.delta?.content;
-
-    if (token) {
-      fullResponse += token;
-      ws.send(JSON.stringify({ token }));
+    if (text.includes("hello")) {
+      return "Hello! I'm your local WebSocket chatbot.";
     }
+
+    if (text.includes("name")) {
+      return "I am a locally simulated AI running in Node.js.";
+    }
+
+    if (text.includes("mongo")) {
+      return "Yes — your messages are stored in MongoDB.";
+    }
+
+    return `You said: "${prompt}". This is a simulated response.`;
   }
 
-  // 4. Save assistant message
-  await Message.create({
-    conversationId,
-    role: "assistant",
-    content: fullResponse
-  });
+  const response = fakeAI(prompt);
 
-  ws.send(JSON.stringify({ done: true }));
+  // Streaming simulation
+  let fullResponse = "";
+  let i = 0;
+
+  const interval = setInterval(async () => {
+    if (i < response.length) {
+      const token = response[i];
+      fullResponse += token;
+
+      ws.send(JSON.stringify({
+        type: "token",
+        token
+      }));
+
+      i++;
+    } else {
+      clearInterval(interval);
+
+      await Message.create({
+        conversationId: convoId,
+        role: "assistant",
+        content: fullResponse
+      });
+
+      ws.send(JSON.stringify({
+        type: "done"
+      }));
+    }
+  }, 20);
 }

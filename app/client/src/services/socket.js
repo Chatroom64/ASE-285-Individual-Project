@@ -1,6 +1,10 @@
 let socket;
 
 export function connectSocket(onMessage) {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    return socket;
+  }
+
   socket = new WebSocket("ws://localhost:3001");
 
   socket.onopen = () => {
@@ -19,6 +23,8 @@ export function connectSocket(onMessage) {
   socket.onerror = (err) => {
     console.error("WebSocket error:", err);
   };
+
+  return socket;
 }
 
 export function sendMessage(payload) {

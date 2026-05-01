@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 const messageSchema = new mongoose.Schema({
   conversationId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -17,4 +18,5 @@ const messageSchema = new mongoose.Schema({
   timestamps: true
 });
 
+messageSchema.index({ conversationId: 1, createdAt: 1 });
 export default mongoose.model("Message", messageSchema);

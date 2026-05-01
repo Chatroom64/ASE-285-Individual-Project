@@ -1,5 +1,26 @@
-ws.on("message", async (msg) => {
-  const { conversationId, prompt } = JSON.parse(msg);
+import { handleChat } from "../services/chatService.js";
 
-  await handleChat(ws, conversationId, prompt);
-});
+export function setupWebSocket(wss) {
+  wss.on("connection", (ws) => {
+    console.log("Client connected");
+
+    ws.on("message", async (msg) => {
+      try {
+        const data = JSON.parse(msg);
+
+        const { prompt, conversationId } = data;
+
+        if (!prompt) return;
+
+        await handleChat(ws, conversationId, prompt);
+
+      } catch (err) {
+        console.error("WS error:", err);
+      }
+    });
+
+    ws.on("close", () => {
+      console.log("Client disconnected");
+    });
+  });
+}
